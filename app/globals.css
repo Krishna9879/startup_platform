@@ -1,0 +1,102 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #0f0f12;
+  color: #e0e0e0;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Smooth animations */
+  .btn-smooth {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .page-enter {
+    @apply animate-in fade-in duration-500;
+  }
+
+  .fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .slide-in-left {
+    animation: slideInLeft 0.4s ease-out forwards;
+  }
+
+  @keyframes slideInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+}
+
+@layer base {
+  :root {
+    /* Dark mode only */
+    --background: 210 15% 6%;
+    --foreground: 210 10% 88%;
+    --card: 210 15% 12%;
+    --card-foreground: 210 10% 88%;
+    --popover: 210 15% 12%;
+    --popover-foreground: 210 10% 88%;
+    /* Calming teal/cyan accent */
+    --primary: 192 70% 45%;
+    --primary-foreground: 210 15% 6%;
+    --secondary: 210 15% 20%;
+    --secondary-foreground: 192 70% 45%;
+    --muted: 210 15% 25%;
+    --muted-foreground: 210 10% 65%;
+    --accent: 192 70% 45%;
+    --accent-foreground: 210 15% 6%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 15% 6%;
+    --border: 210 15% 20%;
+    --input: 210 15% 16%;
+    --ring: 192 70% 45%;
+    --chart-1: 192 70% 45%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 40 70% 50%;
+    --chart-4: 280 60% 50%;
+    --chart-5: 120 65% 45%;
+    --radius: 0.75rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
