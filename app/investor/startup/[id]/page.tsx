@@ -58,6 +58,8 @@ export default function StartupDetailPage() {
   const [startup, setStartup] = useState<Startup>(MOCK_STARTUP);
   const [loading, setLoading] = useState(true);
   const [isInterested, setIsInterested] = useState(false);
+  const [interestStatus, setInterestStatus] = useState<'Interested' | 'DetailsShared' | 'None'>('None');
+  const [founderDetails, setFounderDetails] = useState<{ email: string, phone: string } | null>(null);
   const [showInvestmentForm, setShowInvestmentForm] = useState(false);
   const [messageText, setMessageText] = useState('');
 
@@ -74,23 +76,34 @@ export default function StartupDetailPage() {
     // Get userId from token or use a default (in production, decode from JWT)
     const userIdStr = localStorage.getItem('userId') || '1';
     setUserName(user);
-    setUserId(parseInt(userIdStr));
-    
+    const uId = parseInt(userIdStr);
+    setUserId(uId);
+
     // Check if already interested
     const startupId = parseInt(params.id as string) || startup.id;
     const existingInterests = investorDataService.getInterestsForStartup(startupId);
-    const existingInterest = existingInterests.find(i => i.investorId === parseInt(userIdStr));
-    if (existingInterest && existingInterest.interestType === 'Interested') {
-      setIsInterested(true);
+    const existingInterest = existingInterests.find(i => i.investorId === uId);
+    if (existingInterest) {
+      if (existingInterest.status === 'DetailsShared') {
+        setInterestStatus('DetailsShared');
+        setFounderDetails({
+          email: existingInterest.sharedEmail || '',
+          phone: existingInterest.sharedPhone || ''
+        });
+        setIsInterested(true);
+      } else if (existingInterest.interestType === 'Interested') {
+        setInterestStatus('Interested');
+        setIsInterested(true);
+      }
     }
-    
+
     setLoading(false);
-  }, [router, startup.id]);
+  }, [router, params.id, startup.id]);
 
   const handleExpress = () => {
     const startupId = parseInt(params.id as string) || startup.id;
     const newInterestState = !isInterested;
-    
+
     investorDataService.addInterest({
       investorId: userId,
       investorName: userName,
@@ -99,9 +112,14 @@ export default function StartupDetailPage() {
       startupName: startup.name,
       interestType: newInterestState ? 'Interested' : 'Viewed',
     });
-    
+
     setIsInterested(newInterestState);
-    alert(newInterestState ? 'Interest expressed successfully! The startup will be notified.' : 'Interest removed');
+    if (newInterestState) {
+      setInterestStatus('Interested');
+    } else {
+      setInterestStatus('None');
+    }
+    alert(newInterestState ? 'Interest expressed successfully! The founder will be notified and may share their contact details with you.' : 'Interest removed');
   };
 
   const handleSendMessage = () => {
@@ -109,9 +127,9 @@ export default function StartupDetailPage() {
       alert('Please enter a message');
       return;
     }
-    
+
     const startupId = parseInt(params.id as string) || startup.id;
-    
+
     investorDataService.addInterest({
       investorId: userId,
       investorName: userName,
@@ -121,8 +139,8 @@ export default function StartupDetailPage() {
       interestType: 'Contacted',
       message: messageText,
     });
-    
-    alert('Message sent successfully! The startup will be notified.');
+
+    alert('Message sent successfully! The founder will be notified.');
     setMessageText('');
     setShowInvestmentForm(false);
   };
@@ -281,11 +299,10 @@ export default function StartupDetailPage() {
 
                 <Button
                   onClick={handleExpress}
-                  className={`w-full ${
-                    isInterested
-                      ? 'bg-primary/10 text-primary border border-primary'
-                      : 'bg-primary hover:bg-primary/90'
-                  }`}
+                  className={`w-full ${isInterested
+                    ? 'bg-primary/10 text-primary border border-primary'
+                    : 'bg-primary hover:bg-primary/90'
+                    }`}
                 >
                   <Zap className="mr-2 h-4 w-4" />
                   {isInterested ? 'Interest Expressed' : 'Express Interest'}
@@ -305,7 +322,7 @@ export default function StartupDetailPage() {
                       className="w-full rounded-lg border border-primary/20 p-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 bg-background"
                       rows={3}
                     />
-                    <Button 
+                    <Button
                       onClick={handleSendMessage}
                       className="mt-3 w-full bg-primary hover:bg-primary/90 text-sm"
                     >
@@ -319,23 +336,54 @@ export default function StartupDetailPage() {
             {/* Contact Card */}
             <Card className="mt-6 border-primary/10">
               <CardHeader>
-                <CardTitle className="text-base">Contact Information</CardTitle>
+                <CardTitle className="text-base text-primary">Founder Contact Details</CardTitle>
+                <CardDescription>
+                  {interestStatus === 'DetailsShared'
+                    ? "The founder has shared their details with you."
+                    : interestStatus === 'Interested'
+                      ? "Founder will share details if they're interested."
+                      : "Express interest to see founder's details."}
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
-                <Link
-                  href={`mailto:contact@${startup.website.replace('https://', '').replace('http://', '')}`}
-                  className="flex items-center gap-2 text-primary hover:underline"
-                >
-                  <Mail className="h-4 w-4" />
-                  Send Email
-                </Link>
-                <Link href={startup.website} target="_blank" className="flex items-center gap-2 text-primary hover:underline">
-                  <Globe className="h-4 w-4" />
-                  Visit Website
-                </Link>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Users className="h-4 w-4" />
-                  {startup.teamSize} team members
+                {interestStatus === 'DetailsShared' && founderDetails ? (
+                  <>
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/10">
+                      <Mail className="h-4 w-4 text-primary" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Email</p>
+                        <p className="font-medium">{founderDetails.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/10">
+                      <Zap className="h-4 w-4 text-primary" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Phone</p>
+                        <p className="font-medium">{founderDetails.phone}</p>
+                      </div>
+                    </div>
+                    <Button asChild variant="outline" className="w-full mt-2">
+                      <Link href={`mailto:${founderDetails.email}`}>
+                        <Mail className="h-4 w-4 mr-2" /> Direct Email
+                      </Link>
+                    </Button>
+                  </>
+                ) : (
+                  <div className="text-center p-4 py-8 border border-dashed border-border rounded-xl opacity-60">
+                    <Users className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-xs text-muted-foreground italic">Contact details are locked</p>
+                  </div>
+                )}
+
+                <div className="pt-4 border-t border-border mt-4">
+                  <Link href={startup.website} target="_blank" className="flex items-center gap-2 text-primary hover:underline">
+                    <Globe className="h-4 w-4" />
+                    Visit Website
+                  </Link>
+                  <div className="flex items-center gap-2 mt-2 text-muted-foreground">
+                    <Users className="h-4 w-4" />
+                    {startup.teamSize} team members
+                  </div>
                 </div>
               </CardContent>
             </Card>

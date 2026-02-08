@@ -33,8 +33,8 @@ CREATE TABLE investor_profiles (
     user_id INT NOT NULL,
     company_name VARCHAR(255),
     investment_budget DECIMAL(15, 2) NOT NULL,
-    min_investment DECIMAL(15, 2),
-    max_investment DECIMAL(15, 2),
+    min_investment DECIMAL(15, 2) DEFAULT 50000.00,
+    max_investment DECIMAL(15, 2) DEFAULT 500000.00,
     industry_interests JSON, -- ["AI/ML", "E-commerce", "FinTech", etc.]
     startup_stage_preferences JSON, -- ["Idea", "MVP", "Pre-launch", "Early Revenue"]
     location VARCHAR(255),
@@ -191,12 +191,17 @@ CREATE TABLE investor_interests (
     investor_id INT NOT NULL,
     startup_id INT NOT NULL,
     interest_type ENUM('Viewed', 'Interested', 'Contacted') DEFAULT 'Viewed',
+    status ENUM('Interested', 'DetailsShared') DEFAULT 'Interested',
+    shared_email VARCHAR(255),
+    shared_phone VARCHAR(20),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (investor_id) REFERENCES investor_profiles(id) ON DELETE CASCADE,
     FOREIGN KEY (startup_id) REFERENCES startup_profiles(id) ON DELETE CASCADE,
     UNIQUE KEY unique_interest (investor_id, startup_id),
     INDEX idx_investor_id (investor_id),
-    INDEX idx_startup_id (startup_id)
+    INDEX idx_startup_id (startup_id),
+    INDEX idx_status (status)
 );
 
 -- ========================================

@@ -30,7 +30,7 @@ export default function StartupInquiries() {
 
     // Get startup ID (in production, this would come from user profile)
     const startupId = 1; // Mock startup ID
-    
+
     // Fetch interests
     const fetchedInterests = investorDataService.getInterestsForStartup(startupId);
     setInterests(fetchedInterests);
@@ -47,7 +47,26 @@ export default function StartupInquiries() {
     );
   };
 
-  const getInterestBadgeColor = (type: string) => {
+  const handleShareDetails = (interestId: string) => {
+    // In production, these would be the founder's verified details
+    const founderEmail = "founder@startup.com";
+    const founderPhone = "+91 98765 43210";
+
+    investorDataService.shareDetails(interestId, founderEmail, founderPhone);
+
+    setInterests(prev =>
+      prev.map(interest =>
+        interest.id === interestId ? { ...interest, status: 'DetailsShared', sharedEmail: founderEmail, sharedPhone: founderPhone } : interest
+      )
+    );
+
+    alert('Contact details shared with the investor successfully!');
+  };
+
+  const getInterestBadgeColor = (type: string, status?: string) => {
+    if (status === 'DetailsShared') {
+      return 'bg-green-500/20 text-green-500 border-green-500/30';
+    }
     switch (type) {
       case 'Interested':
         return 'bg-primary/20 text-primary border-primary/30';
@@ -95,21 +114,19 @@ export default function StartupInquiries() {
         <div className="flex gap-2 mb-6">
           <button
             onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-lg transition-colors ${
-              filter === 'all'
+            className={`px-4 py-2 rounded-lg transition-colors ${filter === 'all'
                 ? 'bg-primary/20 text-primary border border-primary/30'
                 : 'bg-secondary/20 text-muted-foreground hover:bg-secondary/30'
-            }`}
+              }`}
           >
             All Inquiries ({interests.length})
           </button>
           <button
             onClick={() => setFilter('unread')}
-            className={`px-4 py-2 rounded-lg transition-colors ${
-              filter === 'unread'
+            className={`px-4 py-2 rounded-lg transition-colors ${filter === 'unread'
                 ? 'bg-primary/20 text-primary border border-primary/30'
                 : 'bg-secondary/20 text-muted-foreground hover:bg-secondary/30'
-            }`}
+              }`}
           >
             Unread ({unreadCount})
           </button>
@@ -131,9 +148,8 @@ export default function StartupInquiries() {
             {filteredInterests.map((interest, index) => (
               <Card
                 key={interest.id}
-                className={`border-border/30 hover:border-primary/30 transition-all duration-300 ${
-                  !interest.read ? 'bg-primary/5 border-primary/20' : ''
-                }`}
+                className={`border-border/30 hover:border-primary/30 transition-all duration-300 ${!interest.read ? 'bg-primary/5 border-primary/20' : ''
+                  }`}
               >
                 <CardHeader>
                   <div className="flex items-start justify-between">
@@ -141,8 +157,8 @@ export default function StartupInquiries() {
                       <div className="flex items-center gap-3 mb-2">
                         <User className="h-5 w-5 text-primary" />
                         <CardTitle className="text-lg">{interest.investorName}</CardTitle>
-                        <Badge className={getInterestBadgeColor(interest.interestType)}>
-                          {interest.interestType}
+                        <Badge className={getInterestBadgeColor(interest.interestType, interest.status)}>
+                          {interest.status === 'DetailsShared' ? 'Details Shared' : interest.interestType}
                         </Badge>
                         {!interest.read && (
                           <Badge className="bg-primary/20 text-primary border-primary/30">
@@ -171,6 +187,24 @@ export default function StartupInquiries() {
                     </div>
                   )}
                   <div className="flex items-center gap-3">
+                    {interest.status !== 'DetailsShared' ? (
+                      <Button
+                        className="bg-primary hover:bg-primary/90 text-background"
+                        onClick={() => {
+                          handleShareDetails(interest.id);
+                          markAsRead(interest.id);
+                        }}
+                      >
+                        Share Contact Details
+                      </Button>
+                    ) : (
+                      <Button
+                        disabled
+                        className="bg-green-500/20 text-green-500 border border-green-500/30"
+                      >
+                        Details Shared
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       className="border-border/30 hover:border-primary/50"
